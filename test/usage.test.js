@@ -32,16 +32,22 @@ test('usage surfaces the quota summary and per-model remaining quota', async () 
     auth: fakeAuth(),
     client: fakeClient({
       summary: { quotaBuckets: [{ window: 'weekly', percentLeft: 80 }] },
-      models: { 'gemini-3.1-pro-low': { remainingFraction: 0.42 }, 'claude-sonnet-4-6': { label: 'x' } },
+      models: {
+        'gemini-3.1-pro-low': { quotaInfo: { remainingFraction: 0.42, resetTime: '2026-09-05T13:03:20Z' } },
+        'claude-sonnet-4-6': { quotaInfo: { remainingFraction: 1, resetTime: '2026-09-05T13:03:20Z' }, label: 'x' },
+        tab_flash_lite_preview: { quotaInfo: { remainingFraction: 0.9 } },
+        chat_20706: {},
+      },
     }),
   })
   const result = await usage.fetchUsage()
   assert.equal(result.configured, true)
   assert.equal(result.email, 'me@example.com')
   assert.deepEqual(result.summary, { quotaBuckets: [{ window: 'weekly', percentLeft: 80 }] })
+  // tab_*/chat_* placeholders are filtered; quota reads the nested quotaInfo.
   assert.deepEqual(result.models, [
-    { id: 'gemini-3.1-pro-low', remaining: 0.42 },
-    { id: 'claude-sonnet-4-6' },
+    { id: 'claude-sonnet-4-6', remaining: 1, resetsAt: '2026-09-05T13:03:20Z' },
+    { id: 'gemini-3.1-pro-low', remaining: 0.42, resetsAt: '2026-09-05T13:03:20Z' },
   ])
   // Cached until refreshed.
   assert.equal(await usage.fetchUsage(), result)
