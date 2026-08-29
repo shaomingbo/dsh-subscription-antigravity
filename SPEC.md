@@ -55,6 +55,10 @@ browsers).
   streams retry with backoff.
 - Quota: `POST /v1internal:retrieveUserQuotaSummary` (paid tiers) plus
   per-model hints from `fetchAvailableModels`; everything degrades gracefully.
+- Generation usage maps Gemini `cachedContentTokenCount` to OpenAI
+  `prompt_tokens_details.cached_tokens` and `thoughtsTokenCount` to
+  `completion_tokens_details.reasoning_tokens`, so pi-ai records cache reads and
+  reasoning separately instead of treating them as fresh prompt/output.
 
 ## Models and thinking routing (lib/model-catalog.js)
 

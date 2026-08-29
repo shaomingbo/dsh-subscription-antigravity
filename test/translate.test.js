@@ -143,7 +143,7 @@ test('the stream translator emits role, reasoning, content, tool calls, usage, a
   ]
   // The SSE frame was split mid-way; finish feeding the remainder.
   out.push(...translator.push('\n'))
-  out.push(...translator.push(sse({ response: { candidates: [{ content: { parts: [{ functionCall: { name: 't', args: { x: 1 } } }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 3, thoughtsTokenCount: 2, totalTokenCount: 15 } } }) + '\n'))
+  out.push(...translator.push(sse({ response: { candidates: [{ content: { parts: [{ functionCall: { name: 't', args: { x: 1 } } }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 3, thoughtsTokenCount: 2, cachedContentTokenCount: 7, totalTokenCount: 15 } } }) + '\n'))
   out.push(...translator.push('data: [DONE]\n\n'))
   out.push(...translator.finish())
 
@@ -157,9 +157,30 @@ test('the stream translator emits role, reasoning, content, tool calls, usage, a
   assert.equal(toolFrame.function.arguments, '{"x":1}')
   const final = frames[4]
   assert.equal(final.choices[0].finish_reason, 'stop')
-  assert.deepEqual(final.usage, { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 })
+  assert.deepEqual(final.usage, {
+    prompt_tokens: 10,
+    completion_tokens: 5,
+    total_tokens: 15,
+    prompt_tokens_details: { cached_tokens: 7 },
+    completion_tokens_details: { reasoning_tokens: 2 },
+  })
   assert.equal(out.at(-1), 'data: [DONE]\n\n')
   assert.equal(translator.error, undefined)
+})
+
+test('the translator preserves cache details when a later usage chunk omits them', () => {
+  const translator = createStreamTranslator({ model: 'gemini-3.7-flash' })
+  translator.push(sse({ response: {
+    candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+    usageMetadata: { promptTokenCount: 100, cachedContentTokenCount: 80, candidatesTokenCount: 1, totalTokenCount: 101 },
+  } }) + '\n')
+  translator.push(sse({ response: {
+    candidates: [{ content: { parts: [] }, finishReason: 'STOP' }],
+    usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 1, totalTokenCount: 101 },
+  } }) + '\n')
+  const frames = translator.finish().filter(text => text.startsWith('data: ') && !text.startsWith('data: [DONE]'))
+    .map(text => JSON.parse(text.slice(6)))
+  assert.deepEqual(frames.at(-1).usage.prompt_tokens_details, { cached_tokens: 80 })
 })
 
 test('the translator flags upstream error payloads and skips malformed lines', () => {
