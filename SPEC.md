@@ -3,9 +3,11 @@
 This plugin is an independent implementation for DeepSeek Harness. The wire
 protocol mirrors the open-source reference
 [pi-antigravity](https://github.com/Rahularya01/pi-antigravity) (MIT), which in
-turn documents the Antigravity CLI (`agy`) behavior. Everything below lives in
-`lib/antigravity-api.js`, `lib/oauth.js`, and `lib/model-catalog.js`, so a
-Google-side change is a one-file update.
+turn documents the Antigravity CLI (`agy`) behavior. Current endpoint and
+request-envelope behavior is also parity-checked against
+[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI/tree/f0de1d008fe8881dcb7431cf97b147295874c2b2/internal/runtime/executor).
+Everything below lives in `lib/antigravity-api.js`, `lib/oauth.js`, and
+`lib/model-catalog.js`, so a Google-side change stays localized.
 
 ## OAuth (lib/oauth.js)
 
@@ -27,9 +29,11 @@ browsers).
 
 ## Cloud Code Assist (lib/antigravity-api.js)
 
-- Endpoints: `https://cloudcode-pa.googleapis.com`, fallback
-  `https://daily-cloudcode-pa.sandbox.googleapis.com`; explicit override with
-  `DSH_ANTIGRAVITY_BASE_URL`.
+- Control plane: `https://cloudcode-pa.googleapis.com`; model discovery may
+  fall back through `https://daily-cloudcode-pa.googleapis.com` and sandbox.
+  Consumer generation is pinned to `https://daily-cloudcode-pa.googleapis.com`
+  (prod returns false `RESOURCE_EXHAUSTED` for subscription quota). Explicit
+  override: `DSH_ANTIGRAVITY_BASE_URL`.
 - Headers: `Authorization: Bearer`, `Accept: text/event-stream` (generation),
   `X-Goog-Api-Client: google-cloud-sdk vscode_cloudshelleditor/0.1`,
   `Client-Metadata: {"ideType":"ANTIGRAVITY",...}`, UA `antigravity/1.15.8`.
@@ -38,13 +42,17 @@ browsers).
 - `POST /v1internal:fetchAvailableModels` (`{project}`) → runtime catalog; the
   keys of `data.models` are the real requestable ids.
 - `POST /v1internal:streamGenerateContent?alt=sse` — envelope
-  `{project, model, request, requestType: 1, userAgent: "ANTIGRAVITY",
+  `{project, model, request, requestType: "agent", userAgent: "antigravity",
   requestId}`; `request` is Gemini-shaped (`contents`, `systemInstruction`,
   `generationConfig`, `tools`, `toolConfig`). SSE events carry
   `{response: {candidates: [{content: {parts}, finishReason}], usageMetadata}}`.
-- Retry ladder (mirrors the reference): retryable statuses walk the endpoint
-  list; a 404 walks the fallback runtime id, then a dynamic
-  `fetchAvailableModels` lookup; empty streams retry with backoff.
+- Gemini requires a `thoughtSignature` on replayed `functionCall` parts. Since
+  OpenAI chat history has no native signature carrier, replay uses Antigravity's
+  `skip_thought_signature_validator` sentinel (matching CLIProxyAPI); Claude and
+  GPT-OSS replay without it.
+- Retry ladder: generation stays on the consumer daily endpoint; a 404 walks
+  the fallback runtime id, then a dynamic `fetchAvailableModels` lookup; empty
+  streams retry with backoff.
 - Quota: `POST /v1internal:retrieveUserQuotaSummary` (paid tiers) plus
   per-model hints from `fetchAvailableModels`; everything degrades gracefully.
 

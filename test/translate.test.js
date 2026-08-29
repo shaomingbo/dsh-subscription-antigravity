@@ -47,7 +47,10 @@ test('assistant tool_calls become functionCall parts; ids only for claude/gpt-os
     { role: 'tool', tool_call_id: 'call_1', content: 'file body' },
   ], 'gemini-3.1-pro-low')
   // contents[0] is the synthesized "Hello" user turn (conversation must open with user).
-  assert.deepEqual(gemini.contents[1].parts, [{ functionCall: { name: 'read_file', args: { path: 'a.txt' } } }])
+  assert.deepEqual(gemini.contents[1].parts, [{
+    functionCall: { name: 'read_file', args: { path: 'a.txt' } },
+    thoughtSignature: 'skip_thought_signature_validator',
+  }])
   assert.deepEqual(gemini.contents[2].parts, [{ functionResponse: { name: 'read_file', response: { output: 'file body' } } }])
 
   const claude = convertMessages([
@@ -92,8 +95,8 @@ test('buildGenerateRequest shapes the Cloud Code Assist envelope and clamps outp
   })
   assert.equal(envelope.project, 'proj')
   assert.equal(envelope.model, 'gemini-3.1-pro-low')
-  assert.equal(envelope.requestType, 1)
-  assert.equal(envelope.userAgent, 'ANTIGRAVITY')
+  assert.equal(envelope.requestType, 'agent')
+  assert.equal(envelope.userAgent, 'antigravity')
   assert.ok(envelope.requestId.startsWith('dsh-antigravity-'))
   assert.deepEqual(envelope.request.systemInstruction, { role: 'user', parts: [{ text: 'sys' }] })
   assert.deepEqual(envelope.request.generationConfig, { temperature: 0.4, maxOutputTokens: 65535 })

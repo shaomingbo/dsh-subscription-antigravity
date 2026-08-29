@@ -1,6 +1,6 @@
 {
   "name": "dsh-subscription-antigravity",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Google Antigravity subscription reuse for DeepSeek Harness: browser PKCE sign-in, loopback OpenAI-compatible proxy to Cloud Code Assist, and Gemini/Claude/GPT-OSS model routes. Unofficial; no telemetry.",
   "type": "module",
   "main": "lib/index.js",

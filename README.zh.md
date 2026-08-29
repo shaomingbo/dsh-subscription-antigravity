@@ -11,7 +11,7 @@ GPT-OSS 模型通过 loopback OpenAI 兼容代理提供给 harness。
 ## 安装
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.3
 ```
 
 无参数安装器会把 bundle 加入 `web` profile（固定 tag 来源、
@@ -22,8 +22,8 @@ Web GUI**。
 其他命令：
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2 status
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2 uninstall
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.3 status
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.3 uninstall
 ```
 
 选项：`--profile <name>`（默认 `web`）、`--source <spec>`、`--help`。
@@ -32,7 +32,7 @@ npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2 uninstall
 ### 本地开发（link:）
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2 install \
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.3 install \
   --source link:/Users/you/open-source/dsh-subscription-antigravity
 ```
 
@@ -41,7 +41,7 @@ npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.1.2 install \
 ### 手动兜底
 
 直接编辑 `~/.dsh/profiles/web/package.json`：在 `dependencies` 加入
-`"dsh-subscription-antigravity": "github:shaomingbo/dsh-subscription-antigravity#v0.1.2"`，
+`"dsh-subscription-antigravity": "github:shaomingbo/dsh-subscription-antigravity#v0.1.3"`，
 在 `dsh.profile.bundles` 加入 `"dsh-subscription-antigravity"`，然后在 profile
 目录运行 `pnpm install --ignore-scripts`，重启 DSH 并强刷。
 

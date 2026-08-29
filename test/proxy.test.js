@@ -84,7 +84,7 @@ test('streaming chat completions translate Cloud Code Assist SSE into OpenAI del
     const upstream = client.generateCalls[0].body
     assert.equal(upstream.model, 'gemini-3.1-pro-low')
     assert.equal(upstream.project, 'proj-1')
-    assert.equal(upstream.requestType, 1)
+    assert.equal(upstream.requestType, 'agent')
     assert.equal(client.generateCalls[0].token, 'access-token')
   } finally {
     await env.stop()
