@@ -166,7 +166,7 @@ test('startLogin returns an auth URL; paste completion exchanges the code and st
     await env.store.init()
     const fetchCalls = []
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async (url, options) => {
         fetchCalls.push({ url, body: options?.body })
         if (url.includes('oauth2/v1/userinfo')) return jsonResponse({ id: 'google-user-1', email: 'me@example.com' })
@@ -214,7 +214,7 @@ test('two Google profiles coexist and can be activated without re-authentication
   const env = tempStore()
   try {
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async (url, options) => {
         if (url.includes('oauth2/v1/userinfo')) {
           const token = options.headers.Authorization.slice('Bearer '.length)
@@ -252,7 +252,7 @@ test('userinfo outages create unique anonymous records instead of overwriting ac
   const env = tempStore()
   try {
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async (url, options) => {
         if (url.includes('oauth2/v1/userinfo')) return jsonResponse({ error: 'unavailable' }, 503)
         const code = new URLSearchParams(options.body).get('code')
@@ -280,7 +280,7 @@ test('a second startLogin while one is pending is refused', async () => {
   const env = tempStore()
   try {
     await env.store.init()
-    const auth = new AntigravityAuth({ store: env.store, fetchImpl: async () => { throw new Error('unused') } })
+    const auth = new AntigravityAuth({ store: env.store, callbackPort: 0, fetchImpl: async () => { throw new Error('unused') } })
     await auth.init()
     await auth.startLogin()
     await assert.rejects(() => auth.startLogin(), error => error.code === 'ANTIGRAVITY_LOGIN_IN_PROGRESS')
@@ -294,7 +294,7 @@ test('cancelLogin settles the login as cancelled', async () => {
   const env = tempStore()
   try {
     await env.store.init()
-    const auth = new AntigravityAuth({ store: env.store, fetchImpl: async () => { throw new Error('unused') } })
+    const auth = new AntigravityAuth({ store: env.store, callbackPort: 0, fetchImpl: async () => { throw new Error('unused') } })
     await auth.init()
     const challenge = await auth.startLogin()
     await auth.cancelLogin(challenge.loginId)
@@ -313,7 +313,7 @@ test('getAccessToken refreshes near expiry under a single flight and persists th
     await env.store.upsertAccount('a1', { type: 'oauth', access: 'stale', refresh: 'rt', expires: 1_000_000 + 30 * 1000 })
     let fetchCount = 0
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async () => {
         fetchCount += 1
         return jsonResponse({ access_token: `fresh-${fetchCount}`, expires_in: 3600 })
@@ -344,7 +344,7 @@ test('refresh single-flight is isolated per account', async () => {
     await env.store.upsertAccount('a2', { type: 'oauth', access: 'old-2', refresh: 'refresh-2', expires: 1 }, { activate: false })
     const calls = []
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async (_url, options) => {
         const refresh = new URLSearchParams(options.body).get('refresh_token')
         calls.push(refresh)
@@ -374,7 +374,7 @@ test('a rejected refresh maps to ANTIGRAVITY_AUTH_EXPIRED with the credential re
     await env.store.init()
     await env.store.upsertAccount('a1', { type: 'oauth', access: 'a', refresh: 'r', expires: 1 })
     const auth = new AntigravityAuth({
-      store: env.store,
+      store: env.store, callbackPort: 0,
       fetchImpl: async () => jsonResponse({ error: 'invalid_grant', error_description: 'Token has been expired or revoked.' }, 400),
       clock: () => 10_000,
     })
@@ -401,7 +401,7 @@ test('logout clears the store and closes pending logins', async () => {
   try {
     await env.store.init()
     await env.store.upsertAccount('a1', { type: 'oauth', access: 'a', refresh: 'r', expires: 1 })
-    const auth = new AntigravityAuth({ store: env.store, fetchImpl: async () => { throw new Error('unused') } })
+    const auth = new AntigravityAuth({ store: env.store, callbackPort: 0, fetchImpl: async () => { throw new Error('unused') } })
     await auth.init()
     await auth.startLogin()
     await auth.logout()

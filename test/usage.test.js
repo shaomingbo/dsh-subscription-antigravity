@@ -57,6 +57,32 @@ test('usage surfaces the quota summary and per-model remaining quota', async () 
   assert.notEqual(refreshed, result)
 })
 
+test('quota discovery uses a stable fallback when a new account has no project id', async () => {
+  const account = { provider: 'antigravity', configured: true, accountId: 'new-account', email: 'new@example.com', expired: false }
+  const auth = {
+    activeAccountId: () => account.accountId,
+    statuses: () => [account],
+    status: id => id === account.accountId ? account : { provider: 'antigravity', configured: false },
+    getAccountContext: async () => ({ accountId: account.accountId, token: 'tok', email: account.email }),
+  }
+  let requestedProject
+  const usage = createUsageService({
+    auth,
+    client: {
+      loadCodeAssist: async () => undefined,
+      retrieveUserQuotaSummary: async () => { throw new Error('paid only') },
+      fetchAvailableModels: async (_token, projectId) => {
+        requestedProject = projectId
+        return { 'gemini-3.7-flash-tiered': { quotaInfo: { remainingFraction: 1 } } }
+      },
+    },
+  })
+  const result = await usage.fetchUsage()
+  assert.equal(typeof requestedProject, 'string')
+  assert.ok(requestedProject.length > 0)
+  assert.deepEqual(result.models, [{ id: 'gemini-3.7-flash-tiered', remaining: 1 }])
+})
+
 test('a paid-tier gate on the summary degrades to a note, not a failure', async () => {
   const usage = createUsageService({
     auth: fakeAuth(),

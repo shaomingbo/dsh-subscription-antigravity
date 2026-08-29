@@ -59,6 +59,9 @@ rather than risking credential overwrite.
   streams retry with backoff.
 - Quota: `POST /v1internal:retrieveUserQuotaSummary` (paid tiers) plus
   per-model hints from `fetchAvailableModels`; everything degrades gracefully.
+  New consumer accounts sometimes return no project from `loadCodeAssist`;
+  quota discovery then uses the same stable local project fallback as generation
+  instead of suppressing otherwise available per-model quota.
 - Generation usage maps Gemini `cachedContentTokenCount` to OpenAI
   `prompt_tokens_details.cached_tokens` and `thoughtsTokenCount` to
   `completion_tokens_details.reasoning_tokens`, so pi-ai records cache reads and

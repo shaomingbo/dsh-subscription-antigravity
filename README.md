@@ -14,7 +14,7 @@ Google. Use only with an account and services you are authorized to access.
 ## Install
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.0
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.1
 ```
 
 The no-argument installer adds the bundle to the `web` profile (fixed tag
@@ -25,8 +25,8 @@ dependency-install failure). It never stops or restarts DSH — when it finishes
 Other commands:
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.0 status
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.0 uninstall
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.1 status
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.1 uninstall
 ```
 
 Options: `--profile <name>` (default `web`), `--source <spec>`, `--help`.
@@ -35,7 +35,7 @@ Environment: `DSH_ANTIGRAVITY_SOURCE` overrides the package source.
 ### Local development (link:)
 
 ```bash
-npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.0 install \
+npx --yes github:shaomingbo/dsh-subscription-antigravity#v0.2.1 install \
   --source link:/Users/you/open-source/dsh-subscription-antigravity
 ```
 
@@ -45,7 +45,7 @@ normal use.
 ### Manual fallback
 
 Edit `~/.dsh/profiles/web/package.json` by hand: add
-`"dsh-subscription-antigravity": "github:shaomingbo/dsh-subscription-antigravity#v0.2.0"`
+`"dsh-subscription-antigravity": "github:shaomingbo/dsh-subscription-antigravity#v0.2.1"`
 to `dependencies` and `"dsh-subscription-antigravity"` to
 `dsh.profile.bundles`, then run `pnpm install --ignore-scripts` in the profile
 directory. Restart DSH and hard-refresh afterwards.
