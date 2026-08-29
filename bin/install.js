@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const PACKAGE_NAME = 'dsh-subscription-antigravity'
-export const DEFAULT_SOURCE = 'github:shaomingbo/dsh-subscription-antigravity#v0.1.1'
+export const DEFAULT_SOURCE = 'github:shaomingbo/dsh-subscription-antigravity#v0.1.2'
 const COMMANDS = ['install', 'status', 'uninstall']
 
 export function parseArgs(argv) {
