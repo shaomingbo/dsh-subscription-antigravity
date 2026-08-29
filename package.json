@@ -1,0 +1,67 @@
+{
+  "name": "dsh-subscription-antigravity",
+  "version": "0.1.0",
+  "description": "Google Antigravity subscription reuse for DeepSeek Harness: browser PKCE sign-in, loopback OpenAI-compatible proxy to Cloud Code Assist, and Gemini/Claude/GPT-OSS model routes. Unofficial; no telemetry.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "dsh-subscription-antigravity": "bin/install.js"
+  },
+  "files": [
+    "bin/install.js",
+    "cordis.patch.yml",
+    "lib",
+    "README.md",
+    "README.zh.md",
+    "SPEC.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/install.js && for f in lib/*.js; do node --check \"$f\" || exit 1; done && node --test"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shaomingbo/dsh-subscription-antigravity.git"
+  },
+  "homepage": "https://github.com/shaomingbo/dsh-subscription-antigravity#readme",
+  "bugs": {
+    "url": "https://github.com/shaomingbo/dsh-subscription-antigravity/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "antigravity",
+    "gemini",
+    "google",
+    "cloud-code-assist",
+    "oauth",
+    "subscription",
+    "llm"
+  ],
+  "author": "shaomingbo",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

@@ -1,0 +1,9 @@
+# DSH host bundle: Google Antigravity subscription OAuth login, a loopback
+# OpenAI-compatible proxy to Cloud Code Assist, and one pi-ai model route
+# (provider id `antigravity`) provisioned through the settings service.
+# The plugin owns its own credentials file and never touches other plugins'
+# data. See README for the login flow and SPEC.md for protocol references.
+
+- insert:
+    - id: subscription-antigravity
+      name: dsh-subscription-antigravity
