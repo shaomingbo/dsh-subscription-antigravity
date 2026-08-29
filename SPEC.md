@@ -6,8 +6,9 @@ protocol mirrors the open-source reference
 turn documents the Antigravity CLI (`agy`) behavior. Current endpoint and
 request-envelope behavior is also parity-checked against
 [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI/tree/f0de1d008fe8881dcb7431cf97b147295874c2b2/internal/runtime/executor).
-Everything below lives in `lib/antigravity-api.js`, `lib/oauth.js`, and
-`lib/model-catalog.js`, so a Google-side change stays localized.
+Protocol details live in `lib/antigravity-api.js`, `lib/oauth.js`, and
+`lib/model-catalog.js`; account policy lives behind `lib/auth-store.js`,
+`lib/usage.js`, and `lib/account-router.js`.
 
 ## OAuth (lib/oauth.js)
 
@@ -16,7 +17,7 @@ Everything below lives in `lib/antigravity-api.js`, `lib/oauth.js`, and
 | Authorize | `https://accounts.google.com/o/oauth2/v2/auth` |
 | Token | `https://oauth2.googleapis.com/token` |
 | Redirect | `http://localhost:51121/oauth-callback` (loopback only) |
-| Flow | Authorization Code + PKCE (S256), `access_type=offline`, `prompt=consent` |
+| Flow | Authorization Code + PKCE (S256), `access_type=offline`, `prompt=select_account consent` |
 | Scopes | `aicode`, `cloud-platform`, `userinfo.email`, `userinfo.profile`, `cclog`, `experimentsandconfigs` |
 | Client | Google's public Antigravity desktop client id/secret (public identifiers, embedded base64 as the reference does); override with `DSH_ANTIGRAVITY_OAUTH_CLIENT_ID` / `DSH_ANTIGRAVITY_OAUTH_CLIENT_SECRET` |
 
@@ -25,7 +26,10 @@ cannot mint tokens. `expires` is stored 5 minutes early. `invalid_grant` on
 refresh maps to the `credential-rejected` envelope (ref
 `ANTIGRAVITY_ACCESS_TOKEN`) so the UI prompts re-login. A pasted callback URL
 follows the same validation rules as the loopback handler (remote/headless
-browsers).
+browsers). Refresh single-flight is keyed by account, so independent accounts
+never share a refresh promise. Google userinfo id is hashed into a stable local
+account id; an unavailable userinfo response receives a unique anonymous id
+rather than risking credential overwrite.
 
 ## Cloud Code Assist (lib/antigravity-api.js)
 
@@ -82,14 +86,32 @@ Output caps come from the reference `RUNTIME_MAX_OUTPUT_TOKENS` table.
   Claude/GPT-OSS runtimes carry explicit call ids and legacy sanitized
   `parameters` schemas; Gemini runtimes use `parametersJsonSchema` and no ids.
 - Thinking: `thought: true` parts surface as `reasoning_content` deltas, which
-  pi-ai's openai-completions parser reads as thinking. Known limitation: we do
-  not replay `thoughtSignature` on later turns (stateless OpenAI surface);
-  Claude multi-turn *tool* calls may degrade before Google's bridge if it
-  demands signatures — Gemini models are unaffected.
+  pi-ai's openai-completions parser reads as thinking. Gemini function-call
+  replay carries Antigravity's `skip_thought_signature_validator` sentinel;
+  Claude and GPT-OSS replay without the Gemini-only field.
 - A conversation that opens with a model turn is prefixed with a `user`
   "Hello" turn (backend rejects otherwise).
 - `finishReason` mapping: `MAX_TOKENS` → `length`; safety family →
   `content_filter`; else `stop`.
+
+## Account pool and quota routing
+
+- Auth document v2 stores `{activeAccountId, autoFailover, accounts}`. The v1
+  `credentials.antigravity` entry migrates in memory and rewrites atomically on
+  the next mutation; foreign v1 entries remain byte-structurally preserved.
+- Every request snapshots one `{accountId, token, projectId}` context. Manual
+  activation affects only later requests; account-level refreshes are isolated.
+- Usage cache is keyed by account id. Initial account-pool quota loading has a
+  concurrency limit of two; per-model `remainingFraction/resetTime` remains
+  available when the paid aggregate summary endpoint returns 403.
+- Automatic failover is persisted but defaults off. When enabled, only a 429
+  classified as `QUOTA_EXHAUSTED` or non-rate-limit `RESOURCE_EXHAUSTED` walks
+  the account ring. Each account is tried once, known zero quota is skipped,
+  and a serialized failover lock prevents switch storms. A concurrent manual
+  selection wins over an automatic candidate.
+- `ANTIGRAVITY_ACCESS_TOKEN` mirrors the active account only. Sync coalesces
+  concurrent work but reruns when active identity changes; an empty pool unsets
+  the seam.
 
 ## DSH integration (lib/index.js)
 
@@ -100,11 +122,11 @@ Output caps come from the reference `RUNTIME_MAX_OUTPUT_TOKENS` table.
   `compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}`.
   Provisioning is a repair, not a takeover: user-customized `models` and
   display names are preserved, and only this provider's own fields ever change.
-- Credentials: `$DSH_HOME/.antigravity-auth.json` (own file, not the shared
-  `.oauth.json`, because two plugins each keep in-memory whole-document stores
-  of that file in one host process and would clobber each other). Fresh access
-  tokens sync into the credentials seam for route resolution; the proxy
-  authenticates upstream with its own runtime token.
+- Credentials: the owner-only v2 account pool lives at
+  `$DSH_HOME/.antigravity-auth.json` (not shared `.oauth.json`). Tokens never
+  cross the browser RPC. The active token syncs into the credentials seam for
+  route resolution; the proxy authenticates from its request-level account
+  context.
 - The RPC channel `/subscription-antigravity` is loopback-authority only and
   folds private error codes into schema-legal envelopes.
 

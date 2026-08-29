@@ -50,7 +50,7 @@ test('the zh/en dictionaries carry the same keys', () => {
     assert.equal(typeof locales.en[key], 'string', `en.${key} should be a string`)
     assert.equal(typeof locales.zh[key], 'string', `zh.${key} should be a string`)
   }
-  for (const key of ['login', 'logout', 'modelsTitle', 'usageTitle', 'statusDisconnected']) {
+  for (const key of ['addAccount', 'removeAccount', 'switchAccount', 'autoFailover', 'modelsTitle', 'usageTitle', 'statusDisconnected']) {
     assert.ok(key in locales.en, `missing UX key ${key}`)
   }
 })
@@ -59,7 +59,7 @@ test('the RPC endpoints the client calls all exist on the host channel handler',
   // Extract the endpoint list from lib/index.js and assert the client-side set is a subset.
   const hostSource = readFileSync(join(root, 'lib', 'index.js'), 'utf8')
   const endpoints = new Set([...hostSource.matchAll(/endpoint === '([a-z-]+)'/g)].map(match => match[1]))
-  for (const endpoint of ['providers', 'start-login', 'paste-callback', 'login-status', 'cancel-login', 'logout', 'usage', 'models']) {
+  for (const endpoint of ['accounts', 'activate-account', 'remove-account', 'set-auto-failover', 'usage-all', 'start-login', 'paste-callback', 'login-status', 'cancel-login', 'usage', 'models']) {
     assert.ok(endpoints.has(endpoint), `host is missing the ${endpoint} endpoint`)
   }
   assert.ok(ROUTE_MODEL_IDS.length > 0)

@@ -3,10 +3,12 @@ import assert from 'node:assert/strict'
 import { createUsageService } from '../lib/usage.js'
 
 function fakeAuth(configured = true) {
+  const account = { provider: 'antigravity', configured, accountId: 'a1', projectId: 'proj-1', email: 'me@example.com', expired: false }
   return {
-    configured: () => configured,
-    status: () => ({ provider: 'antigravity', configured, projectId: 'proj-1', email: 'me@example.com', expired: false }),
-    getAccessToken: async () => 'tok',
+    activeAccountId: () => configured ? 'a1' : undefined,
+    statuses: () => configured ? [account] : [],
+    status: accountId => accountId === 'a1' ? account : { provider: 'antigravity', configured: false },
+    getAccountContext: async () => ({ accountId: 'a1', token: 'tok', projectId: 'proj-1', email: 'me@example.com' }),
   }
 }
 
