@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { realpathSync } from 'node:fs'
+import { realpathSync, readFileSync } from 'node:fs'
 import { readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const PACKAGE_NAME = 'dsh-subscription-antigravity'
-export const DEFAULT_SOURCE = 'github:shaomingbo/dsh-subscription-antigravity#v0.2.1'
+// Default source derives from this package's own version so the pinned tag can
+// never drift behind a release again (v0.3.0 shipped pinned to v0.2.1).
+const PACKAGE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+export const DEFAULT_SOURCE = `github:shaomingbo/dsh-subscription-antigravity#v${PACKAGE_VERSION.version}`
 const COMMANDS = ['install', 'status', 'uninstall']
 
 export function parseArgs(argv) {

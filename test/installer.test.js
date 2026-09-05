@@ -25,10 +25,12 @@ const failingInstall = async () => { throw new Error('pnpm exploded') }
 const okInstall = async () => {}
 
 test('parseArgs defaults to install on the web profile with the pinned source', () => {
+  const packageVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
   const options = parseArgs([])
   assert.equal(options.command, 'install')
   assert.equal(options.profile, 'web')
-  assert.equal(options.source, `github:shaomingbo/${PACKAGE_NAME}#v0.2.1`)
+  // The default source derives from the package version so release pins can never drift.
+  assert.equal(options.source, `github:shaomingbo/${PACKAGE_NAME}#v${packageVersion}`)
   assert.throws(() => parseArgs(['--profile']), /require values/)
   assert.throws(() => parseArgs(['bogus']), /unknown argument/)
   assert.throws(() => parseArgs(['install', 'status']), /unexpected argument/)
