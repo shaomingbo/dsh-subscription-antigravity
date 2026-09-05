@@ -1,6 +1,6 @@
 {
   "name": "dsh-subscription-antigravity",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Google Antigravity subscription reuse for DeepSeek Harness: local multi-account pool with quota visibility and switching, PKCE sign-in, and a loopback Gemini/Claude/GPT-OSS proxy. Unofficial; no telemetry.",
   "type": "module",
   "main": "lib/index.js",

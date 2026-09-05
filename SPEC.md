@@ -38,11 +38,16 @@ rather than risking credential overwrite.
   Consumer generation is pinned to `https://daily-cloudcode-pa.googleapis.com`
   (prod returns false `RESOURCE_EXHAUSTED` for subscription quota). Explicit
   override: `DSH_ANTIGRAVITY_BASE_URL`.
-- Headers: `Authorization: Bearer`, `Accept: text/event-stream` (generation),
-  `X-Goog-Api-Client: google-cloud-sdk vscode_cloudshelleditor/0.1`,
-  `Client-Metadata: {"ideType":"ANTIGRAVITY",...}`, UA `antigravity/1.15.8`.
-- `POST /v1internal:loadCodeAssist` → project id (fallback
-  `listCloudAICompanionProjects`, then a stable seeded UUID). Cached 30 min.
+- Headers (wire fingerprint aligned with the official `agy` CLI, pi v0.7.2
+  PR #35): exactly `Authorization: Bearer`, `Content-Type: application/json`,
+  UA `antigravity/cli/1.1.23 (aidev_client; os_type=linux; arch=amd64;
+  cl=974125021; auth_method=consumer)`. The legacy VS Code extension headers
+  (`X-Goog-Api-Client`, `Client-Metadata`) must NOT be sent — Google serves
+  the old 25-model catalog and 404s new model families (e.g. Gemini 3.8) to
+  tokens presenting them. Override: `DSH_ANTIGRAVITY_USER_AGENT`.
+- `POST /v1internal:loadCodeAssist` (`{"metadata":{"ideType":"ANTIGRAVITY"}}`) →
+  project id (fallback `listCloudAICompanionProjects`, then a stable seeded
+  UUID). Cached 30 min.
 - `POST /v1internal:fetchAvailableModels` (`{project}`) → runtime catalog; the
   keys of `data.models` are the real requestable ids.
 - `POST /v1internal:streamGenerateContent?alt=sse` — envelope
@@ -69,14 +74,28 @@ rather than risking credential overwrite.
 
 ## Models and thinking routing (lib/model-catalog.js)
 
-Seven public ids (the `agy models` catalog): `gemini-3.7-flash`,
-`gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`, `claude-sonnet-4-6`,
-`claude-opus-4-6`, `gpt-oss-120b`. `reasoning_effort` → runtime id mapping
-follows the reference `ANTIGRAVITY_ROUTING` table, including the
-workaround-for-backend-bugs entries (`gemini-pro-agent` for Gemini 3.1 Pro
-high; `gemini-3-flash-agent` for Gemini 3.5 Flash high; single
-`gemini-3.7-flash-tiered` runtime with `generationConfig.thinkingConfig`).
-Output caps come from the reference `RUNTIME_MAX_OUTPUT_TOKENS` table.
+Eight public ids (the `agy models` catalog plus Gemini 3.8 Flash):
+`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`,
+`gemini-3.1-pro`, `claude-sonnet-4-6`, `claude-opus-4-6`, `gpt-oss-120b`.
+`reasoning_effort` → runtime id mapping follows the reference
+`ANTIGRAVITY_ROUTING` table, including the workaround-for-backend-bugs entries
+(`gemini-pro-agent` for Gemini 3.1 Pro high; `gemini-3-flash-agent` for
+Gemini 3.5 Flash high; single `gemini-3.7-flash-tiered` runtime with
+`generationConfig.thinkingConfig`). Output caps come from the reference
+`RUNTIME_MAX_OUTPUT_TOKENS` table.
+
+Gemini 3.8 Flash was gated by the request wire fingerprint, not the account
+(verified 2026-09-02..05): tokens presenting the legacy VS Code extension
+headers saw a 25-model catalog and 404s on every 3.8 runtime id, while the
+agy CLI 1.1.22+ language server on the same Google login served 31+ models
+including `gemini-3.8-flash-low/-medium/-high` (thinkingBudget 1000/4000/-1,
+`MODEL_PLACEHOLDER_M320/M319/M318`). Adopting the agy wire fingerprint
+(pi v0.7.2 PR #35 — drop `X-Goog-Api-Client`/`Client-Metadata`, CLI
+User-Agent) unlocks discovery (33-model catalog) and generation on the same
+tokens. We route the public id by the suffix shape (`-low/-medium/-high`)
+with the advertised thinking budgets on the wire; the 404 fallback ladder to
+the tiered 3.7 runtime for the same effort stays as belt-and-braces, and the
+dynamic catalog lookup self-corrects any suffix drift.
 
 ## Translation decisions (lib/translate.js)
 

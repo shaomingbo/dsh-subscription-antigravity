@@ -56,8 +56,9 @@ test('GET /v1/models lists the static catalog', async () => {
     assert.equal(response.status, 200)
     const body = await response.json()
     assert.equal(body.object, 'list')
-    assert.equal(body.data.length, 7)
+    assert.equal(body.data.length, 8)
     assert.ok(body.data.some(model => model.id === 'gemini-3.7-flash'))
+    assert.ok(body.data.some(model => model.id === 'gemini-3.8-flash'))
     assert.ok(body.data.every(model => model.owned_by === 'antigravity'))
   } finally {
     await env.stop()
@@ -158,6 +159,36 @@ test('a 404 walks the fallback runtime, then the dynamic catalog, before failing
     const models = [failing.generateCalls[0].body.model, failing.generateCalls.at(-1).body.model]
     assert.equal(models[0], 'gemini-3.7-flash-tiered')
     assert.notEqual(models[1], 'gemini-3.7-flash-tiered')
+  } finally {
+    await env.stop()
+  }
+})
+
+test('an unrolled gemini-3.8-flash account falls back to the tiered 3.7 runtime', async () => {
+  let generateCount = 0
+  const client = fakeClient([])
+  const failing = {
+    ...client,
+    generate: async ({ body }) => {
+      generateCount += 1
+      client.generateCalls.push({ body })
+      if (generateCount === 1) return { ok: false, status: 404, text: 'Requested entity was not found' }
+      return { ok: true, status: 200, response: sseResponse([{ response: { candidates: [{ content: { parts: [{ text: '3.7 fallback ok' }] }, finishReason: 'STOP' }] } }]) }
+    },
+    fetchAvailableModels: async () => ({}),
+  }
+  const env = await startProxy(failing)
+  try {
+    const response = await fetch(`${env.url}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gemini-3.8-flash', messages: [{ role: 'user', content: 'hi' }], stream: true }),
+    })
+    assert.equal(response.status, 200)
+    assert.match(await response.text(), /3\.7 fallback ok/)
+    const models = failing.generateCalls.map(call => call.body.model)
+    assert.deepEqual(models, ['gemini-3.8-flash-low', 'gemini-3.7-flash-tiered'])
+    assert.equal(failing.generateCalls[1].body.request.generationConfig.thinkingConfig.thinkingLevel, 'LOW')
   } finally {
     await env.stop()
   }

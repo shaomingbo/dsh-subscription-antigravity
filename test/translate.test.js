@@ -114,6 +114,32 @@ test('tiered Gemini carries thinkingConfig; Claude toolChoice becomes functionCa
   })
   assert.deepEqual(tiered.request.generationConfig.thinkingConfig, { thinkingLevel: 'HIGH' })
 
+  const budget38 = buildGenerateRequest({
+    publicModelId: 'gemini-3.8-flash',
+    runtimeModel: 'gemini-3.8-flash-medium',
+    projectId: 'p',
+    messages: [{ role: 'user', content: 'hi' }],
+    reasoningEffort: 'medium',
+  })
+  assert.deepEqual(budget38.request.generationConfig.thinkingConfig, { includeThoughts: true, thinkingBudget: 4000 })
+
+  const high38 = buildGenerateRequest({
+    publicModelId: 'gemini-3.8-flash',
+    runtimeModel: 'gemini-3.8-flash-high',
+    projectId: 'p',
+    messages: [{ role: 'user', content: 'hi' }],
+    reasoningEffort: 'high',
+  })
+  assert.deepEqual(high38.request.generationConfig.thinkingConfig, { includeThoughts: true, thinkingBudget: -1 })
+
+  const off38 = buildGenerateRequest({
+    publicModelId: 'gemini-3.8-flash',
+    runtimeModel: 'gemini-3.8-flash-low',
+    projectId: 'p',
+    messages: [{ role: 'user', content: 'hi' }],
+  })
+  assert.deepEqual(off38.request.generationConfig.thinkingConfig, { includeThoughts: false, thinkingBudget: 0 })
+
   const claude = buildGenerateRequest({
     publicModelId: 'claude-sonnet-4-6',
     runtimeModel: 'claude-sonnet-4-6',

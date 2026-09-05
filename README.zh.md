@@ -72,6 +72,7 @@ scopes：`aicode`、`cloud-platform`、`userinfo.email`、`userinfo.profile`、
 
 | 模型 | 输入 | 思考级别 |
 |---|---|---|
+| `gemini-3.8-flash` | 文本、图片 | low / medium / high |
 | `gemini-3.7-flash` | 文本、图片 | low / medium / high |
 | `gemini-3.6-flash` | 文本、图片 | low / medium / high |
 | `gemini-3.5-flash` | 文本、图片 | low / medium / high |
@@ -80,8 +81,10 @@ scopes：`aicode`、`cloud-platform`、`userinfo.email`、`userinfo.profile`、
 | `claude-opus-4-6` | 文本、图片 | high |
 | `gpt-oss-120b` | 文本 | medium |
 
-模型可用性、订阅资格和配额因账号而异。设置页为每个已保存账号分别读取
-`quotaInfo`；它是 runtime model 级的尽力快照，不承诺不同模型共用同一额度池。
+模型可用性、订阅资格和配额因账号而异。Gemini 3.8 Flash 通过携带 agy CLI 的
+请求指纹启用（旧的 VS Code 扩展请求头只会拿到旧版目录）；个别 runtime id
+若 404 会透明回退到 Gemini 3.7 Flash。设置页为每个已保存账号分别读取 `quotaInfo`；它是 runtime model 级的
+尽力快照，不承诺不同模型共用同一额度池。
 
 ## 工作原理
 

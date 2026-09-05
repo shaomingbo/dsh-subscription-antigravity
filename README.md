@@ -84,6 +84,7 @@ runtime ids — see `SPEC.md`):
 
 | Model | Input | Thinking |
 |---|---|---|
+| `gemini-3.8-flash` | text, image | low / medium / high |
 | `gemini-3.7-flash` | text, image | low / medium / high |
 | `gemini-3.6-flash` | text, image | low / medium / high |
 | `gemini-3.5-flash` | text, image | low / medium / high |
@@ -92,7 +93,10 @@ runtime ids — see `SPEC.md`):
 | `claude-opus-4-6` | text, image | high |
 | `gpt-oss-120b` | text | medium |
 
-Model availability, entitlement, and quota are account-dependent. Settings
+Model availability, entitlement, and quota are account-dependent. Gemini
+3.8 Flash works by presenting the agy CLI request fingerprint (older
+VS Code extension headers get the legacy catalog instead), with transparent
+fallback to Gemini 3.7 Flash should a runtime id ever 404. Settings
 fetches `quotaInfo` separately for every saved account; these are best-effort
 runtime-model snapshots, not a promise that different models share one pool.
 
